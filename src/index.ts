@@ -7,9 +7,11 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   process.exit(1);
 }
 
+const PUBLIC_URL = process.env.PUBLIC_URL ?? "(unset — manifest URLs will use Host header)";
 const app = createApp();
 const server = app.listen(PORT, () => {
   console.log(`torrentio-stream-curator listening on http://0.0.0.0:${PORT}`);
+  console.log(`PUBLIC_URL=${PUBLIC_URL}`);
 });
 
 let shuttingDown = false;
