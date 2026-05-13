@@ -36,13 +36,18 @@ function buildManifest(configured: boolean, baseUrl: string) {
 }
 
 function originOf(req: Request): string {
-  // Beamup / Dokku rewrites the Host header to the internal container slug
-  // (no domain suffix), which breaks manifest logo/background URLs. Allow an
-  // explicit override so deploys can hardcode their public origin.
+  // Manual override wins for self-hosters behind their own reverse proxy.
   const override = process.env.PUBLIC_URL;
   if (override) return override.replace(/\/+$/, "");
   const proto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0].trim() ?? req.protocol;
-  const host = (req.headers["x-forwarded-host"] as string | undefined) ?? req.get("host") ?? "localhost";
+  let host = (req.headers["x-forwarded-host"] as string | undefined) ?? req.get("host") ?? "localhost";
+  // Beamup's wrapped dokku rewrites Host to the internal container slug
+  // ("<hash>-<projectname>") with no domain suffix. Env-var injection into
+  // the swarm container is broken on the platform, so detect the pattern at
+  // request time and synthesize the public origin.
+  if (host && !host.includes(".") && host !== "localhost") {
+    host = `${host}.baby-beamup.club`;
+  }
   return `${proto}://${host}`;
 }
 
